@@ -28,7 +28,7 @@ func NewClient(c *http.Client) *Client {
 
 // NewClientWithToken returns a github client from a given auth token, according to
 // https://github.com/google/go-github#authentication.
-func NewClientWithToken(ctx context.Context, token string) *Client {
+func NewClientWithToken(ctx context.Context, token int64) *Client {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	return NewClient(oauth2.NewClient(ctx, ts))
 }
