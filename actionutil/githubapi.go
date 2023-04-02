@@ -6,7 +6,6 @@ import (
 	"context"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/google/go-github/v50/github"
 	"github.com/posener/goaction"
@@ -32,7 +31,7 @@ func NewClient(c *http.Client) *Client {
 
 // NewClientWithToken returns a github client from a given auth token, according to
 // https://github.com/google/go-github#authentication.
-func NewClientWithToken(ctx context.Context, token int64) *Client {
+func NewClientWithToken(ctx context.Context, token string) *Client {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	return NewClient(oauth2.NewClient(ctx, ts))
 }

@@ -12,7 +12,7 @@ import (
 
 // PRComment adds a comment to the curerrent pull request. If the comment already exists
 // it updates the exiting comment with the new content.
-func PRComment(ctx context.Context, token int64, content string) error {
+func PRComment(ctx context.Context, token string, content string) error {
 	var (
 		num = goaction.PrNum()
 

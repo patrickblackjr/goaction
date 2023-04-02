@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/posener/autogen"
-	"golang.org/x/tools/go/loader"
+	"golang.org/x/tools/go/packages"
 )
 
 //go:generate go run .
@@ -90,65 +90,78 @@ func main() {
 	log.SetFlags(log.Lshortfile)
 
 	// Load the github program.
-	conf := loader.Config{AllowErrors: true}
-	conf.Import("github.com/google/go-github/v50/github")
+	// conf := loader.Config{AllowErrors: true}
+	conf := packages.Config{}
+	program, err := packages.Load(&conf, "github.com/google/go-github/v50/github")
 	stderr := os.Stderr
 	os.Stderr, _ = os.Open(os.DevNull)
-	program, err := conf.Load()
 	os.Stderr.Close()
 	os.Stderr = stderr
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	// Get github package.
-	var pkg *types.Package
-	for pkg = range program.AllPackages {
-		if pkg.Name() == "github" {
+	var pkg *packages.Package
+	for _, pkg = range program {
+		if pkg.Name == "github" {
 			break
 		}
 	}
 	if pkg == nil {
-		log.Fatal("Package github was not found.")
+		fmt.Print("Package github was not found.")
+		return
+	}
+	fmt.Println(pkg)
+
+	scope := pkg.Types.Scope().Lookup("Client").Type().Underlying()
+
+	if scope == nil {
+		fmt.Print("error", scope)
 	}
 
 	// Get `type Client struct`:
-	client := pkg.Scope().Lookup("Client").Type().Underlying().(*types.Struct)
+	// client := pkg.Types.Scope().Lookup("Client").Type().Underlying().(*types.Struct)
+	if scope == nil {
+		return
+	}
+
+	// client := pkg.Module
 
 	var funcs []fn
 
 	// Iterate Client fields and collect the services.
-	for i := 0; i < client.NumFields(); i++ {
-		field := client.Field(i)
-		if !field.Exported() {
-			continue
-		}
+	for i := 0; i < pkg.Types.Scope().NumChildren(); i++ {
+		// field := pkg.Types.Scope().Child(i)
+		// if !pkg.Types.Complete() {
+		// continue
+		// }
 		// The field is a pointer to a struct, get the pointer.
-		fieldPointer, ok := field.Type().Underlying().Underlying().(*types.Pointer)
-		if !ok {
-			continue
-		}
-		// The pointer points on a struct that ends with the "Service" suffix.
-		fieldType, ok := fieldPointer.Elem().(*types.Named)
-		if !ok {
-			continue
-		}
-		if !strings.HasSuffix(fieldType.Obj().Name(), "Service") {
-			continue
-		}
+		// fieldPointer, ok := field.Child()
+		// if !ok {
+		// 	continue
+		// }
+		// // The pointer points on a struct that ends with the "Service" suffix.
+		// fieldType, ok := fieldPointer.Elem().(*types.Named)
+		// if !ok {
+		// 	continue
+		// }
+		// if !strings.HasSuffix(fieldType.Obj().Name(), "Service") {
+		// 	continue
+		// }
 
 		// Iterate over the field type methods.
-		for j := 0; j < fieldType.NumMethods(); j++ {
-			f := fn{Field: field, Method: fieldType.Method(j)}
-			if !f.isValid() {
-				continue
-			}
-			// Skip Repositories.GetArchiveLink: https://github.com/google/go-github/issues/1533.
-			if f.Field.Name() == "Repositories" && f.Method.Name() == "GetArchiveLink" {
-				continue
-			}
-			funcs = append(funcs, f)
-		}
+		// for j := 0; j < fieldType.NumMethods(); j++ {
+		// 	f := fn{Field: field, Method: fieldType.Method(j)}
+		// 	if !f.isValid() {
+		// 		continue
+		// 	}
+		// 	// Skip Repositories.GetArchiveLink: https://github.com/google/go-github/issues/1533.
+		// 	if f.Field.Name() == "Repositories" && f.Method.Name() == "GetArchiveLink" {
+		// 		continue
+		// 	}
+		// 	funcs = append(funcs, f)
+		// }
 	}
 
 	err = autogen.Execute(
