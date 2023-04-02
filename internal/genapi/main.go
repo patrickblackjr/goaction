@@ -91,7 +91,7 @@ func main() {
 
 	// Load the github program.
 	conf := loader.Config{AllowErrors: true}
-	conf.Import("github.com/google/go-github/v31/github")
+	conf.Import("github.com/google/go-github/v50/github")
 	stderr := os.Stderr
 	os.Stderr, _ = os.Open(os.DevNull)
 	program, err := conf.Load()
